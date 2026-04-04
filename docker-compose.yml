@@ -1,0 +1,41 @@
+version: '2'
+
+# Define the services/containers to be run
+services:
+  api: #name of your service
+    build: ./ # specify the directory of the Dockerfile
+    container_name: api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_USERNAME=$MONGO_USERNAME
+      - MONGO_PASSWORD=$MONGO_PASSWORD
+      - MONGO_HOSTNAME=db
+      - MONGO_PORT=$MONGO_PORT
+      - MONGO_DB=$MONGO_DB
+      - MONGODB_URL_DOCKER=$MONGODB_URL_DOCKER
+
+    ports:
+      - '3010:3000' #specify ports forwarding
+    links:
+      - db # link this service to the database service
+    volumes:
+      - .:/src
+      - node_modules:/src/node_modules
+    depends_on:
+      - db
+
+  db: # name of the service
+    image: mongo # specify image to build container from
+    container_name: db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
+    volumes:
+      - ./dbdata:/data/db
+    ports:
+      - '27017:27017'
+volumes:
+  node_modules:

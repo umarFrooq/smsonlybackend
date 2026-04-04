@@ -1,0 +1,1189 @@
+
+components:
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BadRequest'
+      description: Bad Request
+    DuplicateEmailResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DuplicateEmail'  
+      description: Duplicate Email Error   
+    ForbiddenResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Forbidden'  
+      description: Forbidden Error
+    NotFoundResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFound'
+      description: Not Found Error
+    UnauthorizedResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Unauthorized'
+      description: Unauthorized Error
+  schemas:
+    Address:
+      properties:
+        addressLine1:
+          description: The primary address line.
+          type: string
+        addressLine2:
+          description: The secondary address line (optional).
+          type: string
+        city:
+          description: The city of the address.
+          type: string
+        country:
+          description: The country of the address.
+          type: string
+        createdAt:
+          description: The date and time when the address was created.
+          format: date-time
+          type: string
+        phone:
+          description: The phone number associated with the address (optional).
+          type: string
+        postalCode:
+          description: The postal code of the address.
+          type: string
+        state:
+          description: The state of the address.
+          type: string
+        updatedAt:
+          description: The date and time when the address was last updated.
+          format: date-time
+          type: string
+        userId:
+          description: The ID of the user associated with this address.
+          format: uuid
+          type: string
+      type: object
+    ApiResponse:
+      properties:
+        data:
+          type: object
+        message:
+          type: string
+        status:
+          type: integer
+      type: object
+    BadRequest:
+      properties:
+        message:
+          example: Bad request.
+          type: string
+      type: object
+    Banner:
+      example:
+        id: '1'
+        images:
+        - imageUrl1
+        - imageUrl2
+        name: Fake Banner Name
+        type: other
+      properties:
+        id:
+          description: Banner ID 
+          type: string
+        images:
+          items:
+            format: binary
+            type: string
+          type: array
+        name:
+          description: Name of the banner
+          type: string
+        type:
+          description: Type of the banner (sale or other)
+          type: string
+      required:
+      - name
+      - type
+      type: object
+    BannerSet:
+      properties:
+        __v:
+          example: 0
+          type: integer
+        active:
+          example: true
+          type: boolean
+        bannerName:
+          example: Banner Name
+          type: string
+        createdAt:
+          example: '2024-01-29T07:29:33.340Z'
+          format: date-time
+          type: string
+        device:
+          example: web
+          type: string
+        id:
+          example: 65b753dde8a15c34f04a1764
+          type: string
+        location:
+          example: Location Name
+          type: string
+        slug:
+          example: banner-name-12345
+          type: string
+        type:
+          example: slider
+          type: string
+        updatedAt:
+          example: '2024-01-29T07:29:33.340Z'
+          format: date-time
+          type: string
+      type: object
+    BannerSetCreate:
+      properties:
+        active:
+          example: false
+          type: boolean
+        bannerName:
+          example: abc
+          type: string
+        device:
+          example: web
+          type: string
+        location:
+          example: test
+          type: string
+        type:
+          example: slider
+          type: string
+      required:
+      - bannerName
+      - location
+      - active
+      - type
+      - device
+      type: object
+    BannerSetResponse:
+      properties:
+        data:
+          $ref: '#/components/schemas/BannerSet'
+        message:
+          example: Created successfully.
+          type: string
+        status:
+          example: 200
+          type: integer
+      type: object
+    Category:
+      properties:
+        description:
+          type: string
+        gallery:
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        mainImage:
+          type: string
+        name:
+          type: string
+      type: object
+    CategoryPost:
+      properties:
+        description:
+          type: string
+        gallery:
+          example:
+          - imageUrl1
+          - imageUrl2
+          - imageUrl3
+          items:
+            type: string
+          type: array
+        mainImage:
+          format: binary
+          type: string
+        name:
+          type: string
+      type: object
+    CreateAction:
+      properties:
+        action:
+          type: string
+        reportId:
+          type: string
+      required:
+      - reportId
+      - action
+      type: object
+    CreateAddressInput:
+      properties:
+        addressLine1:
+          description: The primary address line.
+          type: string
+        addressLine2:
+          description: The secondary address line (optional).
+          type: string
+        city:
+          description: The city of the address.
+          type: string
+        country:
+          description: The country of the address.
+          type: string
+        phone:
+          description: The phone number associated with the address (optional).
+          type: string
+        postalCode:
+          description: The postal code of the address.
+          type: string
+        state:
+          description: The state of the address.
+          type: string
+      type: object
+    CreateAnswer:
+      properties:
+        answer:
+          type: string
+      required:
+      - answer
+      type: object
+    CreateProduct:
+      allOf:
+      - $ref: '#/components/schemas/Product'
+      - properties:
+          productName:
+            example: New Product
+            type: string
+        required:
+        - productName
+        type: object
+    CreateQuestion:
+      properties:
+        productId:
+          type: string
+        question:
+          type: string
+      required:
+      - productId
+      - question
+      type: object
+    CreateReport:
+      properties:
+        comment:
+          type: string
+        type:
+          type: string
+        typeId:
+          type: string
+      required:
+      - type
+      - typeId
+      type: object
+    CreateTableRequest:
+      properties:
+        active:
+          type: boolean
+        dataType:
+          enum:
+          - STRING
+          - NUMBER
+          - BOOLEAN
+          - DATE
+          type: string
+        description:
+          type: string
+        key:
+          type: string
+        keyValue:
+          type: string
+        label:
+          type: string
+        unit:
+          type: string
+      required:
+      - key
+      - keyValue
+      - label
+      - description
+      type: object
+    CreateTableResponse:
+      properties:
+        __v:
+          example: 0
+          type: integer
+        active:
+          example: true
+          type: boolean
+        createdAt:
+          example: '2024-02-29T07:21:58.162Z'
+          format: date-time
+          type: string
+        dataType:
+          example: string
+          type: string
+        description:
+          example: testing testing
+          type: string
+        id:
+          example: 65e0309610a07a1a246be1f9
+          type: string
+        key:
+          example: PRICE
+          type: string
+        keyValue:
+          example: '200'
+          type: string
+        label:
+          example: price
+          type: string
+        updatedAt:
+          example: '2024-02-29T07:21:58.162Z'
+          format: date-time
+          type: string
+      type: object
+    DuplicateEmail:
+      properties:
+        message:
+          example: Email already in use.
+          type: string
+      type: object
+    FilterTableResponse:
+      properties:
+        data:
+          items:
+            properties:
+              __v:
+                example: 0
+                type: integer
+              active:
+                example: true
+                type: boolean
+              createdAt:
+                example: '2024-02-29T07:21:58.162Z'
+                format: date-time
+                type: string
+              dataType:
+                example: string
+                type: string
+              description:
+                example: testing testing
+                type: string
+              id:
+                example: 65e0309610a07a1a246be1f9
+                type: string
+              key:
+                example: PRICE
+                type: string
+              keyValue:
+                example: '200'
+                type: string
+              label:
+                example: price
+                type: string
+              updatedAt:
+                example: '2024-02-29T07:21:58.162Z'
+                format: date-time
+                type: string
+            type: object
+          type: array
+      type: object
+    Forbidden:
+      properties:
+        message:
+          example: You do not have permission to access this resource.
+          type: string
+      type: object
+    GenerateAliasPayload:
+      properties:
+        fullDb:
+          description: Whether to generate alias for the full database
+          type: boolean
+        id:
+          description: ID of the seller detail
+          type: string
+      type: object
+    NotFound:
+      properties:
+        message:
+          example: Resource not found.
+          type: string
+      type: object
+    Order:
+      properties:
+        address:
+          description: Reference ID to the address used for the order.
+          type: string
+        adminDiscount:
+          description: Discount applied by admin.
+          type: number
+        code:
+          properties:
+            code:
+              description: Code for discount.
+              type: string
+            codeType:
+              description: Type of discount code.
+              type: string
+            id:
+              description: ID related to the code.
+              type: string
+            totalAmount:
+              description: Total discount amount.
+              type: number
+          type: object
+        customer:
+          description: Reference ID to the customer user.
+          type: string
+        discount:
+          description: Discount applied to the order.
+          type: number
+        groupBuy:
+          description: Indicates if the order is part of a group buy.
+          type: boolean
+        groupBuyId:
+          description: Group buy ID.
+          type: string
+        groupBuyQuantity:
+          description: Quantity for the group buy.
+          type: number
+        orderAddress:
+          additionalProperties: true
+          description: Address details of the order.
+          type: object
+        orderDate:
+          description: Date when the order was placed.
+          format: date-time
+          type: string
+        orderDetail:
+          description: Reference ID to the order detail.
+          type: string
+        orderId:
+          description: Unique identifier for the order.
+          type: string
+        orderItems:
+          description: List of IDs for items in the order.
+          items:
+            type: string
+          type: array
+        orderNote:
+          description: Additional notes related to the order.
+          type: string
+        orderStatus:
+          description: Status ID of the order.
+          type: string
+        payable:
+          description: Total amount payable for the order.
+          type: number
+        payableShippment:
+          description: Payable shipping amount.
+          type: number
+        paymentMethod:
+          description: Payment method selected.
+          enum:
+          - COD
+          - COD_WALLET
+          - WALLET_CARD
+          - WALLET
+          - CARD
+          type: string
+        paymentMethodTotal:
+          description: Total amount for the selected payment method.
+          type: number
+        refCode:
+          description: Reference code for discounts or offers.
+          type: string
+        retailTotal:
+          description: Retail total of the order.
+          type: number
+        seller:
+          description: Reference ID to the seller user.
+          type: string
+        shippment:
+          description: Reference ID to the shipment.
+          type: string
+        shippmentCharges:
+          description: Shipping charges for the order.
+          type: number
+        statusUpdatedAt:
+          description: Date when the status was last updated.
+          format: date-time
+          type: string
+        store:
+          additionalProperties: true
+          description: Store information.
+          type: object
+        subTotal:
+          description: Subtotal cost of the order items.
+          type: number
+        subWeight:
+          description: Total weight of order items.
+          type: number
+        vendor:
+          additionalProperties: true
+          description: Vendor information.
+          type: object
+        wallet:
+          description: Indicates if the wallet was used.
+          type: boolean
+      type: object
+    PackageInfo:
+      properties:
+        volume:
+          properties:
+            height:
+              example: 10
+              type: number
+            length:
+              example: 30
+              type: number
+            unit:
+              default: NONE
+              enum:
+              - NONE
+              - CUBIC_FEET
+              - LITERS
+              type: string
+            width:
+              example: 20
+              type: number
+          type: object
+        weight:
+          example: 5.5
+          type: number
+      type: object
+    Product:
+      properties:
+        active:
+          example: true
+          type: boolean
+        attributes:
+          items:
+            type: object
+          type: array
+        category:
+          example: 6045d336513d358144a144de
+          type: string
+        description:
+          example: Product description here
+          type: string
+        featured:
+          example: false
+          type: boolean
+        gallery:
+          items:
+            example: https://example.com/gallery1.jpg
+            type: string
+          type: array
+        isVariable:
+          example: true
+          type: boolean
+        lang:
+          properties:
+            ar:
+              properties:
+                description:
+                  example: "\u0648\u0635\u0641 \u0627\u0644\u0645\u0646\u062A\u062C\
+                    \ \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629"
+                  type: string
+                productName:
+                  example: "\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062A\u062C\
+                    \ \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629"
+                  type: string
+              type: object
+          type: object
+        mainImage:
+          example: https://example.com/image.jpg
+          type: string
+        onSale:
+          example: false
+          type: boolean
+        packageInfo:
+          $ref: '#/components/schemas/PackageInfo'
+        price:
+          example: 100.0
+          type: number
+        productName:
+          example: Sample Product
+          type: string
+        quantity:
+          example: 50
+          type: number
+        regularPrice:
+          example: 100.0
+          type: number
+        salePrice:
+          example: 90.0
+          type: number
+        selectedAttributes:
+          items:
+            type: object
+          type: array
+        sku:
+          example: SKU12345
+          type: string
+        sku_attribute:
+          example: color
+          type: string
+        slug:
+          example: sample-product
+          type: string
+        user:
+          example: 6045d047513d358144a144bf
+          type: string
+        warranty:
+          $ref: '#/components/schemas/Warranty'
+        weight:
+          example: 1.5
+          type: number
+      type: object
+    ProductPost:
+      properties:
+        message:
+          example: Product created successfully
+          type: string
+        product:
+          $ref: '#/components/schemas/Product'
+      type: object
+    ProductSearchResult:
+      properties:
+        _id:
+          example: 6045d8df513d358144a14553
+          type: string
+        active:
+          example: true
+          type: boolean
+        category:
+          example: 6045d336513d358144a144de
+          type: string
+        categoryTree:
+          items:
+            example: 6045d305513d358144a144da
+            type: string
+          type: array
+        createdAt:
+          example: '2021-03-08T07:57:19.905Z'
+          format: date-time
+          type: string
+        description:
+          example: Cotton, dimensions, age suitability, etc.
+          type: string
+        mainImage:
+          example: https://example.com/mainImage.jpg
+          type: string
+        price:
+          example: 1299
+          type: number
+        productName:
+          example: Cat Mosquito Bed Net Yellow
+          type: string
+        slug:
+          example: Cat-Mosquito-Bed-Net-Yellow
+          type: string
+        updatedAt:
+          example: '2024-04-04T06:26:27.128Z'
+          format: date-time
+          type: string
+      type: object
+    RedeemVoucher:
+      properties:
+        amount:
+          description: Amount for the voucher
+          type: number
+        couponType:
+          description: Type of coupon (e.g., percentage, fixed amount)
+          enum:
+          - percentage
+          - fixed
+          - '...'
+          type: string
+        orderId:
+          description: Order ID associated with the voucher redemption
+          type: string
+        quantity:
+          default: 1
+          description: Quantity of vouchers redeemed
+          type: integer
+        typeId:
+          description: Type ID associated with the voucher
+          type: string
+        userId:
+          description: User ID of the person redeeming the voucher
+          type: string
+        voucherId:
+          description: Voucher ID being redeemed
+          type: string
+      type: object
+    ReportResponse:
+      properties:
+        action:
+          type: string
+        comment:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        id:
+          type: string
+        type:
+          type: string
+        typeId:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        userId:
+          type: string
+      required:
+      - action
+      - typeId
+      - comment
+      - userId
+      - type
+      - createdAt
+      - updatedAt
+      - id
+      type: object
+    Review:
+      properties:
+        comment:
+          properties:
+            comment:
+              maxLength: 500
+              type: string
+            dateTime:
+              format: date-time
+              type: string
+          type: object
+        id:
+          type: string
+        images:
+          items:
+            type: string
+          type: array
+        orderId:
+          type: string
+        productId:
+          type: string
+        rating:
+          maximum: 5
+          minimum: 1
+          type: integer
+        reported:
+          enum:
+          - PENDING
+          - BLOCKED
+          - NONE
+          type: string
+        response:
+          properties:
+            dateTime:
+              format: date-time
+              type: string
+            response:
+              maxLength: 500
+              type: string
+          type: object
+        reviewType:
+          enum:
+          - PRODUCT
+          - SUPPLIER
+          type: string
+        reviewer:
+          properties:
+            fullname:
+              type: string
+            id:
+              type: string
+          type: object
+        sellerDetailId:
+          type: string
+        sellerId:
+          type: string
+      type: object
+    RrpParserPayload:
+      properties:
+        storeId:
+          type: string
+      type: object
+    SearchCollectionSchema:
+      properties:
+        fieldName:
+          description: Name of the field
+          type: string
+        fieldType:
+          description: Type of the field
+          enum:
+          - string
+          - int
+          - float
+          - bool
+          type: string
+      type: object
+    SellerConfidentialDetailPayload:
+      properties:
+        bankAccountNumber:
+          example: '1234567890'
+          type: string
+        bankAccountTitle:
+          example: John Doe
+          type: string
+        bankName:
+          example: ABC Bank
+          type: string
+        cnic_no:
+          example: '1234567890123'
+          type: string
+        seller:
+          example: 60b63b47de13d03759b7016f
+          type: string
+      type: object
+    SellerDetailResponse:
+      properties:
+        data:
+          properties:
+            __v:
+              example: 0
+              type: integer
+            address:
+              example: Example Address
+              type: string
+            alias:
+              example: ExampleBrand
+              type: string
+            approved:
+              example: true
+              type: boolean
+            brandName:
+              example: Example Brand
+              type: string
+            city:
+              example: Example City
+              type: string
+            cityCode:
+              example: '12345'
+              type: string
+            costCenterCode:
+              example: tRyqkq3b
+              type: string
+            costCode:
+              example: false
+              type: boolean
+            country:
+              example: Pakistan
+              type: string
+            createdAt:
+              example: '2024-02-07T09:20:43.897Z'
+              format: date-time
+              type: string
+            description:
+              example: Example description
+              type: string
+            id:
+              example: 65c34b6b24f14029fcbe9e36
+              type: string
+            images:
+              items:
+                type: string
+              type: array
+            market:
+              nullable: true
+              type: string
+            rrp:
+              example: EB411045
+              type: string
+            seller:
+              example: 654372929fd4ba2dc4751941
+              type: string
+            slug:
+              example: example-brand
+              type: string
+            updatedAt:
+              example: '2024-02-07T09:20:43.897Z'
+              format: date-time
+              type: string
+          type: object
+        message:
+          example: ok
+          type: string
+        status:
+          example: 200
+          type: integer
+      type: object
+    
+    SellerDetailRequest:
+      type: object
+      properties:
+        address:
+          type: string
+        brandName:
+          type: string
+        city:
+          type: string
+        cityCode:
+          type: string
+        description:
+          type: string
+        lang:
+          type: object
+          properties:
+            en:
+              type: object
+              properties:
+                brandName:
+                  type: string
+                description:
+                  type: string
+        market:
+          type: string
+        seller:
+          type: string
+    Unauthorized:
+      properties:
+        message:
+          example: Unauthorized access.
+          type: string
+      type: object
+    UpdateAddressInput:
+      properties:
+        addressLine1:
+          description: The primary address line.
+          type: string
+        addressLine2:
+          description: The secondary address line (optional).
+          type: string
+        city:
+          description: The city of the address.
+          type: string
+        country:
+          description: The country of the address.
+          type: string
+        phone:
+          description: The phone number associated with the address (optional)
+          type: string
+        postalCode:
+          description: The postal code of the address.
+          type: string
+        state:
+          description: The state of the address.
+          type: string
+      type: object
+    UpdateSellerDetailPayload:
+      properties:
+        address:
+          description: Address
+          type: string
+        brandName:
+          description: Brand name
+          type: string
+        city:
+          description: City name
+          type: string
+        cityCode:
+          description: City code
+          type: string
+        description:
+          description: Description
+          type: string
+        lang:
+          additionalProperties:
+            properties:
+              brandName:
+                type: string
+              description:
+                type: string
+            type: object
+          type: object
+        market:
+          description: Market ID
+          type: string
+      type: object
+    UpdateSlugPayload:
+      properties:
+        id:
+          description: ID of the seller detail to update
+          type: string
+      type: object
+    UpdateTableByIdRequest:
+      properties:
+        active:
+          type: boolean
+        dataType:
+          enum:
+          - STRING
+          - NUMBER
+          - BOOLEAN
+          - DATE
+          type: string
+        description:
+          type: string
+        key:
+          type: string
+        keyValue:
+          type: string
+        label:
+          type: string
+        unit:
+          type: string
+      type: object
+    User:
+      properties:
+        email:
+          type: string
+        id:
+          type: integer
+        name:
+          type: string
+      type: object
+    Warranty:
+      properties:
+        warrantyPeriod:
+          properties:
+            tenure:
+              example: 12
+              type: number
+            unit:
+              default: NONE
+              enum:
+              - NONE
+              - MONTHS
+              - YEARS
+              type: string
+          type: object
+        warrantyType:
+          default: NONE
+          enum:
+          - NONE
+          - LIMITED
+          - EXTENDED
+          type: string
+      type: object
+    createMarket:
+      properties:
+        description:
+          example: Market Description
+          type: string
+        image:
+          type: string
+        lang:
+          additionalProperties:
+            properties:
+              description:
+                type: string
+              name:
+                type: string
+            type: object
+          type: object
+        mainMarket:
+          description: ObjectId of the main market
+          format: ObjectId
+          type: string
+        name:
+          example: Market Name
+          type: string
+        slug:
+          type: string
+        type:
+          default: MAIN_MARKET
+          enum:
+          - MAIN_MARKET
+          - SUB_MARKET
+          type: string
+      type: object
+    updateMarket:
+      properties:
+        description:
+          example: Updated Market Description
+          type: string
+        lang:
+          additionalProperties:
+            properties:
+              description:
+                type: string
+              name:
+                type: string
+            type: object
+          type: object
+        name:
+          example: Updated Market Name
+          type: string
+      type: object
+    Voucher:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        voucher:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        amount:
+          type: number
+        status:
+          type: string
+        discountType:
+          type: string
+        type:
+          type: string
+        couponType:
+          type: string
+        couponTypeId:
+          type: string
+        numOfVouchers:
+          type: integer
+        limit:
+          type: integer
+        quantity:
+          type: integer
+        remainingVoucher:
+          type: integer
+        lang:
+          type: object
+    AddToWishList:
+      type: object
+      required:
+        - product
+      properties:
+        product:
+          type: string
+          description: The product ID to be added to the wishlist
+      example:
+        product: "5ebac534954b54139806c112"
+    WishList:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            type: string
+            example: "6045d677513d358144a14521"
+        user:
+          type: string
+          example: "65c5c64cfb588a26f0683540"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-02-09T06:30:49.682Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-02-09T06:30:49.682Z"
+        id:
+          type: string
+          example: "65c5c699fb588a26f0683543"
+  securitySchemes:
+    bearerAuth:
+      scheme: bearer
+      type: http
