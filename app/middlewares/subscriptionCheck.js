@@ -4,6 +4,8 @@ const httpStatus = require('http-status');
 const url = require('url');
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
+const mongoose = require('mongoose');
+const User = require('../user/user.model');
 
 // Config: path prefixes that are allowed without subscription validation
 // STRICT WHITELIST: only these prefixes are allowed publicly
@@ -28,10 +30,14 @@ const ALLOWED_PREFIXES = [
   '/v2/doc',
 ];
 
+function requestPathname(req) {
+  return url.parse(req.originalUrl || req.url || '').pathname || '';
+}
+
 function isAllowedPath(req) {
   // allow preflight
   if ((req.method || '').toUpperCase() === 'OPTIONS') return true;
-  const pathname = url.parse(req.originalUrl || req.url).pathname;
+  const pathname = requestPathname(req);
   return ALLOWED_PREFIXES.some(p => pathname.startsWith(p));
 }
 
@@ -41,16 +47,98 @@ function isAllowedPath(req) {
  * - If school's billing status is not active or trialing -> block
  *   - For other roles: respond 402 with JSON instructing to contact billing
  */
+/**
+ * Bearer token from common header shapes (avoids split(' ')[1] failing on double spaces / casing).
+ */
+function extractBearerToken(req) {
+  const raw =
+    req.headers?.authorization ||
+    req.headers?.Authorization ||
+    (typeof req.get === 'function' && req.get('authorization')) ||
+    '';
+  if (!raw || typeof raw !== 'string') return null;
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+/**
+ * Normalize any schoolId shape (ObjectId, populated { id }, string) to a string for queries.
+ */
+function normalizeSchoolId(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    const s = String(raw).trim();
+    return s || null;
+  }
+  if (typeof raw === 'object') {
+    if (raw.$oid) return String(raw.$oid);
+    if (raw._id != null) return normalizeSchoolId(raw._id);
+    if (raw.id != null) return normalizeSchoolId(raw.id);
+    if (raw.schoolId != null) return normalizeSchoolId(raw.schoolId);
+    if (typeof raw.toHexString === 'function') {
+      try {
+        return raw.toHexString();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    if (typeof raw.toString === 'function') {
+      const t = raw.toString();
+      if (/^[a-f0-9]{24}$/i.test(t)) return t;
+    }
+  }
+  return null;
+}
+
+function schoolIdFromJwtPayload(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  const candidates = [payload.schoolId, payload.school_id, payload.school];
+  for (const c of candidates) {
+    const n = normalizeSchoolId(c);
+    if (n) return n;
+  }
+  return null;
+}
+
 // Simple in-memory cache for SchoolBilling lookups to reduce DB reads
 const CACHE_TTL = 30 * 1000; // 30 seconds
 const billingCache = new Map(); // key -> { ts, value }
 
-async function getBillingCached(schoolId) {
-  const entry = billingCache.get(String(schoolId));
+const userSchoolCache = new Map(); // userId string -> { ts, value: schoolId string|null }
+
+async function getSchoolIdForUserCached(userId) {
+  if (!userId) return null;
+  const key = String(userId);
+  const entry = userSchoolCache.get(key);
   const now = Date.now();
-  if (entry && (now - entry.ts) < CACHE_TTL) return entry.value;
-  const value = await SchoolBilling.findOne({ schoolId }).lean();
-  billingCache.set(String(schoolId), { ts: now, value });
+  if (entry && now - entry.ts < CACHE_TTL) return entry.value;
+  let sid = null;
+  try {
+    if (mongoose.Types.ObjectId.isValid(key)) {
+      // Use native collection so mongoose-autopopulate on User.schoolId cannot strip/shape the ref
+      const oid = new mongoose.Types.ObjectId(key);
+      const u = await User.collection.findOne({ _id: oid }, { projection: { schoolId: 1 } });
+      sid = normalizeSchoolId(u?.schoolId);
+    }
+  } catch (e) {
+    console.error('subscriptionCheck user school lookup failed', e && e.message ? e.message : e);
+  }
+  userSchoolCache.set(key, { ts: now, value: sid });
+  return sid;
+}
+
+async function getBillingCached(schoolId) {
+  const key = String(schoolId);
+  const entry = billingCache.get(key);
+  const now = Date.now();
+  if (entry && now - entry.ts < CACHE_TTL) return entry.value;
+  const or = [];
+  if (mongoose.Types.ObjectId.isValid(key)) {
+    or.push({ schoolId: new mongoose.Types.ObjectId(key) });
+  }
+  or.push({ schoolId: key });
+  const value = or.length ? await SchoolBilling.findOne({ $or: or }).lean() : null;
+  billingCache.set(key, { ts: now, value });
   return value;
 }
 
@@ -61,13 +149,29 @@ module.exports = async function subscriptionCheck(req, res, next) {
 
     // Decode JWT once (runs before route-level passport on many requests)
     let jwtPayload = null;
-    const authHeader = (req.headers.authorization || req.headers.Authorization || '');
-    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-      const token = authHeader.split(' ')[1];
+    const bearer = extractBearerToken(req);
+    let jwtVerifyError = null;
+    if (bearer) {
       try {
-        jwtPayload = jwt.verify(token, config.jwt.secret);
+        jwtPayload = jwt.verify(bearer, config.jwt.secret);
       } catch (e) {
-        // invalid token: treat as no subscription context below
+        jwtVerifyError = e;
+        jwtPayload = null;
+      }
+    }
+
+    const pathname = requestPathname(req);
+    const needsCredentialedApi =
+      (pathname.startsWith('/v2/') || pathname.startsWith('/v1/')) && !isAllowedPath(req);
+
+    if (needsCredentialedApi) {
+      if (!bearer) {
+        res.locals.errorMessage = 'AUTH_MISSING_BEARER';
+        return res.status(401).json({ code: 'UNAUTHORIZED', message: 'Authorization bearer token required' });
+      }
+      if (!jwtPayload) {
+        res.locals.errorMessage = `AUTH_INVALID_JWT:${jwtVerifyError && jwtVerifyError.name ? jwtVerifyError.name : 'verify_failed'}`;
+        return res.status(401).json({ code: 'INVALID_TOKEN', message: 'Invalid or expired access token' });
       }
     }
 
@@ -77,31 +181,43 @@ module.exports = async function subscriptionCheck(req, res, next) {
     }
 
     // If authentication middleware hasn't populated `req.user` yet, attach schoolId from JWT
+    // (subscription runs before passport on /v1 and /v2).
     let user = req.user || {};
-    if (!user.schoolId && jwtPayload) {
-      let sid = jwtPayload.schoolId || jwtPayload.school_id;
-      if (sid && typeof sid === 'object') {
-        sid = sid._id || sid.id || sid.schoolId || sid.toString();
-      }
-      if (sid) {
+    let resolvedFromJwt = normalizeSchoolId(user.schoolId);
+    if (!resolvedFromJwt && jwtPayload) {
+      resolvedFromJwt = schoolIdFromJwtPayload(jwtPayload);
+      if (resolvedFromJwt) {
         req.user = req.user || {};
-        req.user.schoolId = sid;
-        user.schoolId = sid;
+        req.user.schoolId = resolvedFromJwt;
+        user.schoolId = resolvedFromJwt;
+      }
+    }
+
+    // Verified JWT but no school on token (older tokens / edge cases): resolve from user record
+    if (!resolvedFromJwt && jwtPayload && jwtPayload.sub) {
+      const fromDb = await getSchoolIdForUserCached(jwtPayload.sub);
+      if (fromDb) {
+        resolvedFromJwt = fromDb;
+        req.user = req.user || {};
+        req.user.schoolId = fromDb;
       }
     }
 
     // For school-scoped users we require a schoolId (unless allowed above)
-    const schoolId = (req.user && req.user.schoolId) || req.headers['x-school-id'] || req.query.schoolId;
+    const headerOrQuery =
+      normalizeSchoolId(req.headers['x-school-id']) ||
+      normalizeSchoolId(req.query && req.query.schoolId);
+    const schoolId = resolvedFromJwt || headerOrQuery;
     if (!schoolId) {
-      // No schoolId and not an allowed path -> block
+      res.locals.errorMessage = 'SUBSCRIPTION_REQUIRED:no_schoolId';
       return res.status(402).json({ code: 'SUBSCRIPTION_REQUIRED', message: 'School subscription required. Please login or contact support.', contact: process.env.SUPPORT_EMAIL || 'billing@yourdomain.com' });
     }
 
     const billing = await getBillingCached(schoolId);
-    let status = billing?.status;
+    let status = (billing?.status || '').toString().trim().toLowerCase();
 
     // Trial Expiry Check: if status is 'trialing' but nextBillingDate is past, it's expired
-    if (status === 'trialing' && billing.nextBillingDate && new Date(billing.nextBillingDate) < new Date()) {
+    if (status === 'trialing' && billing && billing.nextBillingDate && new Date(billing.nextBillingDate) < new Date()) {
       // Update status to 'past_due' (expired) in DB (don't wait for it to finish)
       SchoolBilling.updateOne({ schoolId }, { $set: { status: 'past_due' } }).catch(e => console.error('Expiry update failed', e));
       // Update local status for immediate blockade
@@ -112,6 +228,7 @@ module.exports = async function subscriptionCheck(req, res, next) {
 
     // If no billing record or not active/trialing -> block with JSON 402
     if (!billing || !['active', 'trialing'].includes(status)) {
+      res.locals.errorMessage = `SUBSCRIPTION_INACTIVE:school=${schoolId}:status=${billing ? status || 'unknown' : 'no_row'}`;
       return res.status(402).json({
         code: 'SUBSCRIPTION_INACTIVE',
         message: 'School subscription is inactive or expired. Contact billing or upgrade your plan.',

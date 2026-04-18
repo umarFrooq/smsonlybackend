@@ -316,7 +316,8 @@ router.post('/upgrade', async (req, res) => {
     const plan = await SubscriptionPlan.findOne({ key: planKey, active: true });
     if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-    const update = { planKey, studentCount };
+    // Always mark subscription active on upgrade so schools are not left on past_due from an old trial
+    const update = { planKey, studentCount, status: 'active' };
     const billing = await SchoolBilling.findOneAndUpdate({ schoolId }, { $set: update }, { new: true, upsert: true });
 
     let transaction = null;
