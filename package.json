@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node ./server.js",
     "start-dev": "cross-env NODE_ENV=development nodemon ./server.js",
-    "start-docker": "cross-env NODE_ENV=docker node ./server.js",
     "test": "jest -i --colors --testEnvironment=node --verbose --coverage --detectOpenHandles",
     "test-dev": "jest -i --colors --testEnvironment=node --verbose --coverage --detectOpenHandles --runInBand",
     "test:watch": "jest -i --watchAll",
@@ -118,5 +117,8 @@
   "_moduleAliases": {
     "@": ".",
     "@app": "app"
+  },
+  "engines": {
+    "node": ">=18 <=24"
   }
 }

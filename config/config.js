@@ -5,7 +5,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const envVarsSchema = Joi.object()
     .keys({
-        NODE_ENV: Joi.string().valid('production', 'development', 'test', 'docker').required(),
+        NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
         PORT: Joi.number().default(3000),
         MONGODB_URL: Joi.string().required().description('Mongo DB url'),
         JWT_SECRET: Joi.string().required().description('JWT secret key'),
@@ -29,7 +29,6 @@ const envVarsSchema = Joi.object()
         ROUTEE_SECRET_KEY: Joi.string().description("Routee secret key"),
         ROUTEE_APPLICATION_ID: Joi.string().description("Routee application Id"),
         FACEBOOK_CLIENT_ID: Joi.string().description("Facebook client Id"),
-        FACEBOOK_CLIENT_SECRET_KEY: Joi.string().description("Facebook client secret Id"),
         FACEBOOK_CLIENT_SECRET_KEY: Joi.string().description("Facebook client secret Id"),
         GOOGLE_CLIENT_ID: Joi.string().description("Google client Id"),
         GOOGLE_CLIENT_SECRET_KEY: Joi.string().description("Google client secret key"),
@@ -77,7 +76,6 @@ const envVarsSchema = Joi.object()
 
         OPENAI_KEY: Joi.string().description("open ai secret key").required(),
         OPENAI_URL: Joi.string().description("open ai  embeding url").required(),
-        GA_PROPERTY_ID: Joi.string().description("google analytics property id").required(),
         APILAYR_URL: Joi.string().description("APLayer url for currency conversion").required(),
         APILAYR_KEY: Joi.string().description("APLayer key for currency conversion").required(),
         // SHOPIFY_CLIENT_ID: Joi.string().description("Shopify client id").required(),
@@ -110,7 +108,7 @@ module.exports = {
     domainName: envVars.DOMAIN_NAME,
     awsLambdaKey: envVars.LAMBDA_API_KEY,
     mongo: {
-        url: (envVars.NODE_ENV === 'test' ? envVars.MONGODB_URL_TEST : (envVars.NODE_ENV === 'docker' ? envVars.MONGODB_URL_DOCKER : envVars.MONGODB_URL)),
+        url: envVars.NODE_ENV === 'test' ? envVars.MONGODB_URL_TEST : envVars.MONGODB_URL,
         options: {
             useCreateIndex: true,
             useNewUrlParser: true,
@@ -269,6 +267,6 @@ module.exports = {
     // },
     encryptionKeys: {
         apiKeyEncKey: envVars.API_KEY_ENC_KEY,
-        apiKeyEncKeyIV: envVars.API_KEY_ENC_KEY,
+        apiKeyEncKeyIV: envVars.API_KEY_ENC_KEY_IV,
     }
 };

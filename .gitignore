@@ -118,3 +118,6 @@ dist
 public/catalogs/*
 
 .codegpt
+
+# Expo / local tooling (not part of this API)
+.expo/
