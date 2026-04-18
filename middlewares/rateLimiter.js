@@ -1,4 +1,4 @@
-const { ipWhitlist } = require('@/enums/enum');
+const { ipWhitlist } = require('../enums/enum');
 const rateLimit = require('express-rate-limit');
 const requestIp = require('request-ip');
 const authLimiter = (req, res, next) => {

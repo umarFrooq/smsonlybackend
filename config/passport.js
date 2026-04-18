@@ -3,7 +3,7 @@ const config = require("./config");
 const mongoose = require('mongoose');
 const db = require("../config/mongoose");
 const { roleTypes } = require("./enums");
-const { getSession } = require("@/app/session/session.service");
+const { getSession } = require("../app/session/session.service");
 const User = db.User;
 const jwtOptions = {
   secretOrKey: config.jwt.secret,
