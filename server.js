@@ -1,5 +1,7 @@
 // require('appoptics-apm')
 require('module-alias/register');
+// Vercel's Express build step looks for a direct `express` import on the Node entry (package.json "main").
+require('express');
 
 const mongoose = require('mongoose');
 const app = require('./config/express');
