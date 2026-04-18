@@ -26,6 +26,13 @@ function connectMongo() {
 }
 
 module.exports = async (req, res) => {
+  // CORS preflight must succeed without touching MongoDB (faster + avoids DB errors blocking login).
+  const method = (req.method || '').toUpperCase();
+  if (method === 'OPTIONS') {
+    app(req, res);
+    return;
+  }
+
   try {
     await connectMongo();
   } catch (err) {

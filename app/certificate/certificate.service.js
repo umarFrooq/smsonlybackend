@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const handlebars = require('handlebars');
-const puppeteer = require('puppeteer');
 const CertificateTemplate = require('./certificate.template.model');
 const GeneratedCertificate = require('./generated.model');
 const User = require('../user/user.model');
@@ -10,6 +9,11 @@ const httpStatus = require('http-status');
 const S3Util = require('../../config/s3.file.system');
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'certificates');
+
+/** Lazy-load: top-level `require('puppeteer')` breaks Vercel/serverless cold starts. */
+function getPuppeteer() {
+  return require('puppeteer');
+}
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -103,7 +107,7 @@ async function generateCertificate({ templateId, studentId, generatedBy, certifi
       console.warn('Failed to write debug HTML file', e.message);
     }
 
-    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    browser = await getPuppeteer().launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     // Longer timeouts for complex templates/assets
     page.setDefaultNavigationTimeout(60000);
@@ -163,7 +167,7 @@ async function renderHtmlToPdfBuffer(html, options = {}) {
   let browser;
   try {
     const sanitizedHtml = (html || '').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    browser = await getPuppeteer().launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(options.timeout || 60000);
     page.setDefaultTimeout(options.timeout || 60000);
